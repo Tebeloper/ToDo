@@ -7,11 +7,12 @@
 
 import UIKit
 
-class ViewController: UIViewController {
-
+class CategoryViewController: UIViewController {
+    
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     private var model = [ToDoListItem]()
+    
     
     let tableView: UITableView = {
         let table = UITableView()
@@ -54,9 +55,9 @@ class ViewController: UIViewController {
         }))
         present(alert, animated: true)
     }
-
     
-// MARK: - Core Data
+    
+    // MARK: - Core Data
     
     // Create
     func createItem(name: String) {
@@ -69,7 +70,7 @@ class ViewController: UIViewController {
             getAllItems()
         }
         catch {
-            // error
+            print("Error creating new Category... \(error)")
         }
     }
     // Read
@@ -81,7 +82,8 @@ class ViewController: UIViewController {
             }
         }
         catch {
-             // error
+            print("Error reading the data... \(error)")
+            
         }
     }
     //Update
@@ -93,7 +95,7 @@ class ViewController: UIViewController {
             getAllItems()
         }
         catch {
-            // error
+            print("Error updating the data... \(error)")
         }
     }
     // Delete
@@ -105,14 +107,13 @@ class ViewController: UIViewController {
             getAllItems()
         }
         catch {
-            // error
+            print("Error deleting the data... \(error)")
         }
     }
-    
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension ViewController: UITableViewDelegate, UITableViewDataSource {
+extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -139,7 +140,7 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         let sheet = UIAlertController(title: "ActionSheet",
                                       message: nil,
                                       preferredStyle: .actionSheet)
-                
+        
         sheet.addAction(UIAlertAction(title: "Edit", style: .default, handler: { [weak self] _ in
             let alert = UIAlertController(title: "Edit item",
                                           message: "Edit your item",
@@ -162,23 +163,25 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         sheet.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
             self?.deleteItem(item: item)
         }))
-                                      
+        
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
+        
         present(sheet, animated: true)
     }
     
     // Swipe to Delete & Edit
-    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let item = model[indexPath.row]
         let newName = item.name!
         
-        let deleteAction = UITableViewRowAction(style: .destructive, title: "Delete") { _, indexPath in
-            self.deleteItem(item: item)
-            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
+            self?.deleteItem(item: item)
+            self?.tableView.deleteRows(at: [indexPath], with: .automatic)
+            completionHandler(true)
         }
         
-        let editAction = UITableViewRowAction(style: .normal, title: "Edit") { _, indexPath in
+        let editAction = UIContextualAction(style: .normal, title: "Edit") { [weak self] (action, view, completionHandler) in
             let alert = UIAlertController(title: "Edit item",
                                           message: "Edit your item",
                                           preferredStyle: .alert)
@@ -194,12 +197,13 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
                 self?.updateItem(item: item, newName: newName)
             }))
             
-            self.present(alert, animated: true)
+            self?.present(alert, animated: true)
+            completionHandler(true)
         }
         editAction.backgroundColor = .systemOrange
         
-        return [deleteAction, editAction]
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction])
+        return configuration
     }
-    
 }
 
