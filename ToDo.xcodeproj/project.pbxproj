@@ -67,7 +67,6 @@
 				CB26E2AA29D477950070696D /* Views */,
 				CB26E2A829D477400070696D /* Controllers */,
 				CB205EF429D2EDD20014D58C /* Info.plist */,
-				CB205EEC29D2EDD10014D58C /* ToDo.xcdatamodeld */,
 			);
 			path = ToDo;
 			sourceTree = "<group>";
@@ -77,6 +76,7 @@
 			children = (
 				CB205EFA29D2EEBA0014D58C /* ToDoListItem+CoreDataClass.swift */,
 				CB205EFB29D2EEBA0014D58C /* ToDoListItem+CoreDataProperties.swift */,
+				CB205EEC29D2EDD10014D58C /* ToDo.xcdatamodeld */,
 			);
 			path = ToDoListItem;
 			sourceTree = "<group>";
