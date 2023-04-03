@@ -18,7 +18,7 @@ extension Items {
 
     @NSManaged public var done: Bool
     @NSManaged public var name: String?
-    @NSManaged public var parentCategory: ToDoListItem?
+    @NSManaged public var parentCategory: Category?
 
 }
 

@@ -1,5 +1,5 @@
 //
-//  ToDoListItem+CoreDataProperties.swift
+//  Category+CoreDataProperties.swift
 //  ToDo
 //
 //  Created by Dimitrios Gkarlemos on 03/04/2023.
@@ -10,10 +10,10 @@ import Foundation
 import CoreData
 
 
-extension ToDoListItem {
+extension Category {
 
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<ToDoListItem> {
-        return NSFetchRequest<ToDoListItem>(entityName: "ToDoListItem")
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Category> {
+        return NSFetchRequest<Category>(entityName: "Category")
     }
 
     @NSManaged public var done: Bool
@@ -23,7 +23,7 @@ extension ToDoListItem {
 }
 
 // MARK: Generated accessors for items
-extension ToDoListItem {
+extension Category {
 
     @objc(addItemsObject:)
     @NSManaged public func addToItems(_ value: Items)
@@ -39,6 +39,6 @@ extension ToDoListItem {
 
 }
 
-extension ToDoListItem : Identifiable {
+extension Category : Identifiable {
 
 }

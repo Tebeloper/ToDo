@@ -1,17 +1,24 @@
 //
-//  ViewController.swift
+//  ItemsViewController.swift
 //  ToDo
 //
-//  Created by Dimitrios Gkarlemos on 28/03/2023.
+//  Created by Dimitrios Gkarlemos on 03/04/2023.
 //
 
 import UIKit
+import CoreData
 
-class CategoryViewController: UIViewController {
-    
+class ItemsViewController: UIViewController {
+
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
-    var category = [Category]()
+    var item = [Items]()
+    
+    var selectedCategory: Category? {
+        didSet {
+            loadData()
+        }
+    }
     
     let tableView: UITableView = {
         let table = UITableView()
@@ -22,11 +29,11 @@ class CategoryViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "ToDo"
+        title = selectedCategory?.name ?? "Items"
         
         view.addSubview(tableView)
         
-        getAllCategories()
+        getAllItems()
         
         tableView.delegate = self
         tableView.dataSource = self
@@ -40,6 +47,8 @@ class CategoryViewController: UIViewController {
     
     @objc private func didTapAdd() {
         
+        let selectedCategory = selectedCategory
+        
         let alert = UIAlertController(title: "Create",
                                       message: "Enter new category",
                                       preferredStyle: .alert)
@@ -48,22 +57,30 @@ class CategoryViewController: UIViewController {
             guard let field = alert.textFields?.first,
                   let text = field.text,
                   !text.isEmpty else {return}
-            
-            self?.createCategory(name: text)
+                        
+            if selectedCategory == nil {
+                return
+            } else {
+                self?.createItem(name: text, category: selectedCategory!)
+            }
         }))
         present(alert, animated: true)
     }
-    
+
     // MARK: - Core Data
     
     // Create
-    func createCategory(name: String) {
-        let newItem = Category(context: context)
+    func createItem(name: String, category: Category) {
+        let newItem = Items(context: context)
+        
         newItem.name = name
+        newItem.parentCategory = category
+        
+        item.append(newItem)
         
         do {
             try context.save()
-            getAllCategories()
+            getAllItems()
         }
         catch {
             print("Error creating new category: \(error)")
@@ -71,26 +88,42 @@ class CategoryViewController: UIViewController {
     }
     
     // Read
-    func getAllCategories() {
+    func getAllItems() {
         do {
-            category = try context.fetch(Category.fetchRequest())
+            item = try context.fetch(Items.fetchRequest())
             DispatchQueue.main.async {
                 self.tableView.reloadData()
             }
         }
         catch {
             print("Error reading data: \(error)")
-            
         }
     }
     
+    func loadData(with request: NSFetchRequest<Items> = Items.fetchRequest(), predicate: NSPredicate? = nil) {
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
+        do {
+            item = try context.fetch(request)
+        } catch {
+            print("Error reading data: \(error)")
+        }
+        tableView.reloadData()
+    }
+    
     //Update
-    func updateCategory(category: Category, newName: String) {
-        category.name = newName
+    func updateItem(item: Items, newName: String) {
+        item.name = newName
         
         do {
             try context.save()
-            getAllCategories()
+            getAllItems()
         }
         catch {
             print("Error updating data: \(error)")
@@ -98,12 +131,12 @@ class CategoryViewController: UIViewController {
     }
     
     // Delete
-    func deleteCategory(category: Category) {
-        context.delete(category)
+    func deleteItem(item: Items) {
+        context.delete(item)
         
         do {
             try context.save()
-            getAllCategories()
+            getAllItems()
         }
         catch {
             print("Error deleting data: \(error)")
@@ -122,18 +155,18 @@ class CategoryViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
+extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return category.count
+        return item.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let category = category[indexPath.row]
+        let item = item[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = category.name
-        cell.accessoryType = category.done ? .checkmark : .none
+        cell.textLabel?.text = item.name
+        cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
     }
@@ -146,22 +179,12 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        print(category[indexPath.row])
-        performSegue(withIdentifier: "items", sender: self)
-    }
-    
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        DispatchQueue.main.async {
-            let destinationVC = segue.destination as! ItemsViewController
-            if let indexPath = self.tableView.indexPathForSelectedRow {
-                destinationVC.selectedCategory = self.category[indexPath.row]
-            }
-        }
+        print(item[indexPath.row])
     }
     
     // UITableViewDelegate - Swipe to Edit, Mark/Unmark, Delete
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let category = category[indexPath.row]
+        let item = item[indexPath.row]
         
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
             let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
@@ -169,7 +192,7 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
                 completionHandler(false)
             })
             actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
-                self?.deleteCategory(category: category)
+                self?.deleteItem(item: item)
                 self?.tableView.deleteRows(at: [indexPath], with: .automatic)
                 completionHandler(true)
             })
@@ -184,24 +207,24 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
                                           preferredStyle: .alert)
             
             alert.addTextField(configurationHandler: nil)
-            alert.textFields?.first?.text = category.name
+            alert.textFields?.first?.text = item.name
             
             alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
                 guard let field = alert.textFields?.first,
                       let newName = field.text,
                       !newName.isEmpty else {return}
                 
-                self?.updateCategory(category: category, newName: newName)
+                self?.updateItem(item: item, newName: newName)
             }))
             
             self?.present(alert, animated: true)
             completionHandler(true)
         }
         
-        let doneTitle = category.done ? "Unmark" : "Mark"
+        let doneTitle = item.done ? "Unmark" : "Mark"
         let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
             
-            category.done = !category.done
+            item.done = !item.done
             self?.saveData()
             completionHandler(true)
         }
@@ -213,4 +236,3 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
         return configuration
     }
 }
-

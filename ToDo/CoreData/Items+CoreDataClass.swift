@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-@objc(Items)
+
 public class Items: NSManagedObject {
 
 }
