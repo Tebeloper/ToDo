@@ -13,7 +13,6 @@ class CategoryViewController: UIViewController {
     
     private var category = [ToDoListItem]()
     
-    
     let tableView: UITableView = {
         let table = UITableView()
         table.register(UITableViewCell.self,
@@ -41,10 +40,9 @@ class CategoryViewController: UIViewController {
     
     @objc private func didTapAdd() {
         
-        let alert = UIAlertController(title: "New Item",
-                                      message: "Enter new item",
+        let alert = UIAlertController(title: "Create",
+                                      message: "Enter new category",
                                       preferredStyle: .alert)
-        
         alert.addTextField()
         alert.addAction(UIAlertAction(title: "Submit", style: .cancel, handler: {[weak self] _ in
             guard let field = alert.textFields?.first,
@@ -55,7 +53,6 @@ class CategoryViewController: UIViewController {
         }))
         present(alert, animated: true)
     }
-    
     
     // MARK: - Core Data
     
@@ -69,9 +66,10 @@ class CategoryViewController: UIViewController {
             getAllCategories()
         }
         catch {
-            print("Error creating new Category... \(error)")
+            print("Error creating new category: \(error)")
         }
     }
+    
     // Read
     func getAllCategories() {
         do {
@@ -81,10 +79,11 @@ class CategoryViewController: UIViewController {
             }
         }
         catch {
-            print("Error reading the data... \(error)")
+            print("Error reading data: \(error)")
             
         }
     }
+    
     //Update
     func updateCategory(category: ToDoListItem, newName: String) {
         category.name = newName
@@ -94,9 +93,10 @@ class CategoryViewController: UIViewController {
             getAllCategories()
         }
         catch {
-            print("Error updating the data... \(error)")
+            print("Error updating data: \(error)")
         }
     }
+    
     // Delete
     func deleteCategory(category: ToDoListItem) {
         context.delete(category)
@@ -106,7 +106,7 @@ class CategoryViewController: UIViewController {
             getAllCategories()
         }
         catch {
-            print("Error deleting the data... \(error)")
+            print("Error deleting data: \(error)")
         }
     }
     
@@ -115,7 +115,7 @@ class CategoryViewController: UIViewController {
         do {
             try context.save()
         } catch {
-            print("Error saving the data... \(error)")
+            print("Error saving data: \(error)")
         }
         tableView.reloadData()
     }
@@ -145,25 +145,33 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
     // UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let category = category[indexPath.row]
+        //        let category = category[indexPath.row]
         
         print(indexPath.row)
     }
     
-    // Swipe to Delete & Edit
-    
+    // UITableViewDelegate - Swipe to Edit, Mark/Unmark, Delete
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let category = category[indexPath.row]
         
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
-            self?.deleteCategory(category: category)
-            self?.tableView.deleteRows(at: [indexPath], with: .automatic)
-            completionHandler(true)
+            let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
+            actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                completionHandler(false)
+            })
+            actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
+                self?.deleteCategory(category: category)
+                self?.tableView.deleteRows(at: [indexPath], with: .automatic)
+                completionHandler(true)
+            })
+            if let presenter = self?.presentedViewController {
+                presenter.dismiss(animated: true, completion: nil)
+            }
+            self?.present(actionSheet, animated: true, completion: nil)
         }
-        
         let editAction = UIContextualAction(style: .normal, title: "Edit") { [weak self] (action, view, completionHandler) in
-            let alert = UIAlertController(title: "Edit item",
-                                          message: "Edit your item",
+            let alert = UIAlertController(title: "Edit",
+                                          message: "Make the changes you want",
                                           preferredStyle: .alert)
             
             alert.addTextField(configurationHandler: nil)
@@ -186,10 +194,11 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
             
             category.done = !category.done
             self?.saveData()
+            completionHandler(true)
         }
         
         editAction.backgroundColor = .systemOrange
-        doneAction.backgroundColor = category.done ? .systemPurple : .systemBlue
+        doneAction.backgroundColor = .systemBlue
         
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction, doneAction])
         return configuration
