@@ -29,7 +29,6 @@ class ItemsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = selectedCategory?.name ?? "Items"
         
         view.addSubview(tableView)
         
@@ -46,11 +45,9 @@ class ItemsViewController: UIViewController {
     }
     
     @objc private func didTapAdd() {
-        
-        let selectedCategory = selectedCategory
-        
+                
         let alert = UIAlertController(title: "Create",
-                                      message: "Enter new category",
+                                      message: "Enter new item",
                                       preferredStyle: .alert)
         alert.addTextField()
         alert.addAction(UIAlertAction(title: "Submit", style: .cancel, handler: {[weak self] _ in
@@ -58,11 +55,7 @@ class ItemsViewController: UIViewController {
                   let text = field.text,
                   !text.isEmpty else {return}
                         
-            if selectedCategory == nil {
-                return
-            } else {
-                self?.createItem(name: text, category: selectedCategory!)
-            }
+                self?.createItem(name: text)
         }))
         present(alert, animated: true)
     }
@@ -70,21 +63,14 @@ class ItemsViewController: UIViewController {
     // MARK: - Core Data
     
     // Create
-    func createItem(name: String, category: Category) {
+    func createItem(name: String) {
         let newItem = Items(context: context)
-        
+
         newItem.name = name
-        newItem.parentCategory = category
-        
+        newItem.parentCategory = selectedCategory
         item.append(newItem)
-        
-        do {
-            try context.save()
-            getAllItems()
-        }
-        catch {
-            print("Error creating new category: \(error)")
-        }
+
+        saveItem()
     }
     
     // Read
@@ -120,7 +106,6 @@ class ItemsViewController: UIViewController {
     //Update
     func updateItem(item: Items, newName: String) {
         item.name = newName
-        
         do {
             try context.save()
             getAllItems()
@@ -133,7 +118,6 @@ class ItemsViewController: UIViewController {
     // Delete
     func deleteItem(item: Items) {
         context.delete(item)
-        
         do {
             try context.save()
             getAllItems()
@@ -144,7 +128,7 @@ class ItemsViewController: UIViewController {
     }
     
     // Save
-    func saveData() {
+    func saveItem() {
         do {
             try context.save()
         } catch {
@@ -152,6 +136,7 @@ class ItemsViewController: UIViewController {
         }
         tableView.reloadData()
     }
+    
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
@@ -225,7 +210,7 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
         let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
             
             item.done = !item.done
-            self?.saveData()
+            self?.saveItem()
             completionHandler(true)
         }
         

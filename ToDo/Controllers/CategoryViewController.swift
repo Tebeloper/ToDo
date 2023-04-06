@@ -60,7 +60,6 @@ class CategoryViewController: UIViewController {
     func createCategory(name: String) {
         let newItem = Category(context: context)
         newItem.name = name
-        
         do {
             try context.save()
             getAllCategories()
@@ -87,7 +86,6 @@ class CategoryViewController: UIViewController {
     //Update
     func updateCategory(category: Category, newName: String) {
         category.name = newName
-        
         do {
             try context.save()
             getAllCategories()
@@ -100,7 +98,6 @@ class CategoryViewController: UIViewController {
     // Delete
     func deleteCategory(category: Category) {
         context.delete(category)
-        
         do {
             try context.save()
             getAllCategories()
@@ -144,17 +141,22 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
         
-        print(category[indexPath.row])
+        /* took me 3 days to find out why when i was creating an item from a category i was still has 'nil' parentCategory... "Joel Groomer" this man from Slack solved it!!! */
+        
+        //        tableView.deselectRow(at: indexPath, animated: true)
+        
         performSegue(withIdentifier: "items", sender: self)
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         DispatchQueue.main.async {
-            let destinationVC = segue.destination as! ItemsViewController
             if let indexPath = self.tableView.indexPathForSelectedRow {
-                destinationVC.selectedCategory = self.category[indexPath.row]
+                self.tableView.deselectRow(at: indexPath, animated: true)
+                let selectedCategory = self.category[indexPath.row]
+                let destinationVC = segue.destination as! ItemsViewController
+                destinationVC.selectedCategory = selectedCategory
+                destinationVC.title = selectedCategory.name
             }
         }
     }
