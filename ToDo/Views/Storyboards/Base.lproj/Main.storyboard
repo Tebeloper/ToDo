@@ -50,12 +50,6 @@
         <scene sceneID="9RQ-Q7-Bd7">
             <objects>
                 <viewController id="TCO-LT-cOG" customClass="ItemsViewController" customModule="ToDo" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="enE-AP-XyV">
-                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <viewLayoutGuide key="safeArea" id="XYy-17-hyN"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                    </view>
                     <navigationItem key="navigationItem" id="pOn-9X-gPM"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ZCD-gu-b2C" sceneMemberID="firstResponder"/>

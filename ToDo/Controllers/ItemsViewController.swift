@@ -9,7 +9,7 @@ import UIKit
 import CoreData
 
 class ItemsViewController: UIViewController {
-
+    
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     var item = [Items]()
@@ -27,17 +27,25 @@ class ItemsViewController: UIViewController {
         return table
     }()
     
+    let searchBar: UISearchBar = {
+        let searchBar = UISearchBar()
+        searchBar.placeholder = "Search items..."
+        return searchBar
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         view.addSubview(tableView)
+        navigationItem.titleView = searchBar
         
         getAllItems()
         
         tableView.delegate = self
         tableView.dataSource = self
-        
         tableView.frame = view.bounds
+        
+        searchBar.delegate = self
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add,
                                                             target: self,
@@ -45,7 +53,7 @@ class ItemsViewController: UIViewController {
     }
     
     @objc private func didTapAdd() {
-                
+        
         let alert = UIAlertController(title: "Create",
                                       message: "Enter new item",
                                       preferredStyle: .alert)
@@ -54,22 +62,22 @@ class ItemsViewController: UIViewController {
             guard let field = alert.textFields?.first,
                   let text = field.text,
                   !text.isEmpty else {return}
-                        
-                self?.createItem(name: text)
+            
+            self?.createItem(name: text)
         }))
         present(alert, animated: true)
     }
-
+    
     // MARK: - Core Data
     
     // Create
     func createItem(name: String) {
         let newItem = Items(context: context)
-
+        
         newItem.name = name
         newItem.parentCategory = selectedCategory
         item.append(newItem)
-
+        
         saveItem()
     }
     
@@ -219,5 +227,27 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
         
         let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction, doneAction])
         return configuration
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension ItemsViewController: UISearchBarDelegate {
+    
+    //RealTime search...
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        searchBar.becomeFirstResponder()
+        
+        guard let text = searchBar.text, !text.replacingOccurrences(of: " ", with: "").isEmpty else {
+            loadData()
+            searchBar.resignFirstResponder()
+            return
+        }
+        
+        let request: NSFetchRequest<Items> = Items.fetchRequest()
+        
+        let predicate = NSPredicate(format: "name CONTAINS[cd] %@", text)
+        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        
+        loadData(with: request, predicate: predicate)
     }
 }

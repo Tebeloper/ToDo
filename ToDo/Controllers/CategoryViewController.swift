@@ -142,7 +142,7 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
     // UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        /* took me 3 days to find out why when i was creating an item from a category i was still has 'nil' parentCategory... "Joel Groomer" this man from Slack solved it!!! */
+        /* took me 3 days to find out why when i was creating an item from a category i was still has 'nil' parentCategory... "Joel Groomer" this man from Slack solved it!!! 06/04/2023 */
         
         //        tableView.deselectRow(at: indexPath, animated: true)
         
