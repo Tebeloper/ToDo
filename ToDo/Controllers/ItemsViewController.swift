@@ -38,9 +38,7 @@ class ItemsViewController: UIViewController {
         
         view.addSubview(tableView)
         navigationItem.titleView = searchBar
-        
-        getAllItems()
-        
+                
         tableView.delegate = self
         tableView.dataSource = self
         tableView.frame = view.bounds
@@ -116,11 +114,11 @@ class ItemsViewController: UIViewController {
         item.name = newName
         do {
             try context.save()
-            getAllItems()
         }
         catch {
             print("Error updating data: \(error)")
         }
+        tableView.reloadData()
     }
     
     // Delete
@@ -128,11 +126,11 @@ class ItemsViewController: UIViewController {
         context.delete(item)
         do {
             try context.save()
-            getAllItems()
         }
         catch {
             print("Error deleting data: \(error)")
         }
+        tableView.reloadData()
     }
     
     // Save
@@ -172,7 +170,7 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        print(item[indexPath.row])
+        print(indexPath.row)
     }
     
     // UITableViewDelegate - Swipe to Edit, Mark/Unmark, Delete
@@ -182,12 +180,10 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
             let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
             actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
-                completionHandler(false)
             })
             actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
+                self?.item.remove(at: indexPath.row)
                 self?.deleteItem(item: item)
-                self?.tableView.deleteRows(at: [indexPath], with: .automatic)
-                completionHandler(true)
             })
             if let presenter = self?.presentedViewController {
                 presenter.dismiss(animated: true, completion: nil)
