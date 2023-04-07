@@ -168,9 +168,7 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        print(indexPath.row)
+        tableView.deselectRow(at: indexPath, animated: true)        
     }
     
     // UITableViewDelegate - Swipe to Edit, Mark/Unmark, Delete

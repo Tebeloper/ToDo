@@ -200,18 +200,9 @@ extension CategoryViewController: UITableViewDelegate, UITableViewDataSource {
             completionHandler(true)
         }
         
-        let doneTitle = category.done ? "Unmark" : "Mark"
-        let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
-            
-            category.done = !category.done
-            self?.saveData()
-            completionHandler(true)
-        }
-        
         editAction.backgroundColor = .systemOrange
-        doneAction.backgroundColor = .systemBlue
         
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction, doneAction])
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction])
         return configuration
     }
 }
