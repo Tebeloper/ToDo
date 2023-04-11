@@ -12,7 +12,8 @@ class ItemsViewController: UIViewController {
     
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
-    var item = [Items]()
+    var pendingItem = [Items]()
+    var doneItem = [Items]()
     
     var selectedCategory: Category? {
         didSet {
@@ -20,12 +21,28 @@ class ItemsViewController: UIViewController {
         }
     }
     
-    let tableView: UITableView = {
+    let pendingTableView: UITableView = {
         let table = UITableView()
         table.register(UITableViewCell.self,
-                       forCellReuseIdentifier: "cell")
+                       forCellReuseIdentifier: "pending")
         return table
     }()
+    
+    let doneTableTitle: UILabel = {
+        let doneTableTitle = UILabel()
+        doneTableTitle.text = "Done items ✅"
+        doneTableTitle.font = UIFont.preferredFont(forTextStyle: .largeTitle)
+        doneTableTitle.isHidden = true
+        return doneTableTitle
+    }()
+    
+    let doneTableView: UITableView = {
+        let table = UITableView()
+        table.register(UITableViewCell.self,
+                       forCellReuseIdentifier: "done")
+        return table
+    }()
+    
     
     let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
@@ -35,19 +52,33 @@ class ItemsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .systemBackground
         
-        view.addSubview(tableView)
+        view.addSubview(pendingTableView)
+        view.addSubview(doneTableTitle)
+        view.addSubview(doneTableView)
+        
         navigationItem.titleView = searchBar
-                
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.frame = view.bounds
+        
+        pendingTableView.delegate = self
+        pendingTableView.dataSource = self
+        
+        doneTableView.delegate = self
+        doneTableView.dataSource = self
         
         searchBar.delegate = self
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add,
                                                             target: self,
                                                             action: #selector(didTapAdd))
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        constrainTables()
+        
+        
     }
     
     @objc private func didTapAdd() {
@@ -61,9 +92,43 @@ class ItemsViewController: UIViewController {
                   let text = field.text,
                   !text.isEmpty else {return}
             
-            self?.createItem(name: text)
+            let trimmedString = text.trimmingCharacters(in: .whitespaces)
+            self?.createItem(name: trimmedString)
         }))
         present(alert, animated: true)
+    }
+    
+    func constrainTables() {
+        
+        // Add constraints to pendingTableView
+        pendingTableView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            pendingTableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                  constant: 5),
+            pendingTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                      constant: 5),
+            pendingTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                       constant: -5),
+            pendingTableView.heightAnchor.constraint(equalToConstant: 350)
+        ])
+        
+        // Add constraints to doneTableView
+        doneTableView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            doneTableView.topAnchor.constraint(equalTo: pendingTableView.bottomAnchor,                                                    constant: 10),
+            doneTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                   constant: 5),
+            doneTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                                    constant: -5),
+            doneTableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor,                                                      constant: -5)
+        ])
+        
+        // Add constraints to doneTableTitle
+        doneTableTitle.translatesAutoresizingMaskIntoConstraints = false
+        doneTableTitle.topAnchor.constraint(equalTo: doneTableView.topAnchor, constant: -40).isActive = true
+        doneTableTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        doneTableTitle.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        
     }
     
     // MARK: - Core Data
@@ -74,7 +139,8 @@ class ItemsViewController: UIViewController {
         
         newItem.name = name
         newItem.parentCategory = selectedCategory
-        item.append(newItem)
+        
+        pendingItem.append(newItem)
         
         saveItem()
     }
@@ -82,9 +148,10 @@ class ItemsViewController: UIViewController {
     // Read
     func getAllItems() {
         do {
-            item = try context.fetch(Items.fetchRequest())
+            pendingItem = try context.fetch(Items.fetchRequest())
             DispatchQueue.main.async {
-                self.tableView.reloadData()
+                self.pendingTableView.reloadData()
+                self.doneTableView.reloadData()
             }
         }
         catch {
@@ -102,11 +169,12 @@ class ItemsViewController: UIViewController {
         }
         
         do {
-            item = try context.fetch(request)
+            pendingItem = try context.fetch(request)
         } catch {
             print("Error reading data: \(error)")
         }
-        tableView.reloadData()
+        pendingTableView.reloadData()
+        doneTableView.reloadData()
     }
     
     //Update
@@ -118,7 +186,8 @@ class ItemsViewController: UIViewController {
         catch {
             print("Error updating data: \(error)")
         }
-        tableView.reloadData()
+        pendingTableView.reloadData()
+        doneTableView.reloadData()
     }
     
     // Delete
@@ -130,7 +199,8 @@ class ItemsViewController: UIViewController {
         catch {
             print("Error deleting data: \(error)")
         }
-        tableView.reloadData()
+        pendingTableView.reloadData()
+        doneTableView.reloadData()
     }
     
     // Save
@@ -140,7 +210,8 @@ class ItemsViewController: UIViewController {
         } catch {
             print("Error saving data: \(error)")
         }
-        tableView.reloadData()
+        pendingTableView.reloadData()
+        doneTableView.reloadData()
     }
     
 }
@@ -150,16 +221,33 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return item.count
+        if tableView == pendingTableView {
+            return pendingItem.count
+        }
+        if doneItem.count != 0 {
+            doneTableTitle.isHidden = false
+            return doneItem.count
+        } else {
+            return 0
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = item[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = item.name
-        cell.accessoryType = item.done ? .checkmark : .none
-        
-        return cell
+        if tableView == pendingTableView {
+            let item = pendingItem[indexPath.row]
+            let cell = tableView.dequeueReusableCell(withIdentifier: "pending", for: indexPath)
+            cell.textLabel?.text = item.name
+            cell.accessoryType = item.done ? .checkmark : .none
+            
+            return cell
+        } else {
+            let item = doneItem[indexPath.row]
+            let cell = tableView.dequeueReusableCell(withIdentifier: "done", for: indexPath)
+            cell.textLabel?.text = item.name
+            cell.accessoryType = item.done ? .checkmark : .none
+            
+            return cell
+        }
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -168,59 +256,107 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
     
     // UITableViewDelegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)        
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     // UITableViewDelegate - Swipe to Edit, Mark/Unmark, Delete
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let item = item[indexPath.row]
         
-        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
-            let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
-            actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
-            })
-            actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
-                self?.item.remove(at: indexPath.row)
-                self?.deleteItem(item: item)
-            })
-            if let presenter = self?.presentedViewController {
-                presenter.dismiss(animated: true, completion: nil)
+        let pendingItem = pendingItem[indexPath.row]
+        let doneTitle = pendingItem.done ? "Unmark" : "Mark"
+        
+        if tableView == pendingTableView {
+            
+            let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
+                let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
+                actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                })
+                actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
+                    self?.pendingItem.remove(at: indexPath.row)
+                    self?.deleteItem(item: pendingItem)
+                    self?.saveItem()
+                })
+                if let presenter = self?.presentedViewController {
+                    presenter.dismiss(animated: true, completion: nil)
+                }
+                self?.present(actionSheet, animated: true, completion: nil)
             }
-            self?.present(actionSheet, animated: true, completion: nil)
-        }
-        let editAction = UIContextualAction(style: .normal, title: "Edit") { [weak self] (action, view, completionHandler) in
-            let alert = UIAlertController(title: "Edit",
-                                          message: "Make the changes you want",
-                                          preferredStyle: .alert)
-            
-            alert.addTextField(configurationHandler: nil)
-            alert.textFields?.first?.text = item.name
-            
-            alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
-                guard let field = alert.textFields?.first,
-                      let newName = field.text,
-                      !newName.isEmpty else {return}
+            let editAction = UIContextualAction(style: .normal, title: "Edit") { [weak self] (action, view, completionHandler) in
+                let alert = UIAlertController(title: "Edit",
+                                              message: "Make the changes you want",
+                                              preferredStyle: .alert)
                 
-                self?.updateItem(item: item, newName: newName)
-            }))
+                alert.addTextField(configurationHandler: nil)
+                alert.textFields?.first?.text = pendingItem.name
+                
+                alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
+                    guard let field = alert.textFields?.first,
+                          let newName = field.text,
+                          !newName.isEmpty else {return}
+                    
+                    self?.updateItem(item: pendingItem, newName: newName)
+                }))
+                
+                self?.present(alert, animated: true)
+                completionHandler(true)
+            }
             
-            self?.present(alert, animated: true)
-            completionHandler(true)
-        }
-        
-        let doneTitle = item.done ? "Unmark" : "Mark"
-        let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
+            let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
+                
+                let markedItem = self?.pendingItem.remove(at: indexPath.row)
+                
+                self?.doneItem.append(markedItem!)
+                self?.saveItem()
+                completionHandler(true)
+            }
             
-            item.done = !item.done
-            self?.saveItem()
-            completionHandler(true)
+            editAction.backgroundColor = .systemOrange
+            doneAction.backgroundColor = .systemBlue
+            
+            let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction, doneAction])
+            return configuration
+            
+            // Doing stuff with doneTable
+        } else {
+            let doneItems = doneItem[indexPath.row]
+            let doneTitle = pendingItem.done ? "Mark" : "Unmark"
+            
+            let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
+                let actionSheet = UIAlertController(title: "Do you want to delete this category", message: "The category will permanently be deleted", preferredStyle: .actionSheet)
+                actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                })
+                actionSheet.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
+                    self?.doneItem.remove(at: indexPath.row)
+                    self?.deleteItem(item: doneItems)
+                    self?.saveItem()
+                    
+                    if self?.doneItem.count == 0 {
+                        self?.doneTableTitle.isHidden = true
+                    }
+                })
+                if let presenter = self?.presentedViewController {
+                    presenter.dismiss(animated: true, completion: nil)
+                }
+                self?.present(actionSheet, animated: true, completion: nil)
+            }
+            
+            let doneAction = UIContextualAction(style: .normal, title: doneTitle) { [weak self] (action, view, completionHandler) in
+                
+                let markedItem = self?.doneItem.remove(at: indexPath.row)
+                
+                self?.pendingItem.append(markedItem!)
+                if self?.doneItem.count == 0 {
+                    self?.doneTableTitle.isHidden = true
+                }
+                
+                self?.saveItem()
+            }
+            
+            doneAction.backgroundColor = .systemBlue
+            
+            let configuration = UISwipeActionsConfiguration(actions: [deleteAction, doneAction])
+            return configuration
         }
-        
-        editAction.backgroundColor = .systemOrange
-        doneAction.backgroundColor = .systemBlue
-        
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction, doneAction])
-        return configuration
     }
 }
 

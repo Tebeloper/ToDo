@@ -49,7 +49,8 @@ class CategoryViewController: UIViewController {
                   let text = field.text,
                   !text.isEmpty else {return}
             
-            self?.createCategory(name: text)
+            let trimmedString = text.trimmingCharacters(in: .whitespaces)
+            self?.createCategory(name: trimmedString)
         }))
         present(alert, animated: true)
     }
