@@ -35,13 +35,13 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="23.664122137404579" y="-7.042253521126761"/>
+            <point key="canvasLocation" x="-769" y="-192"/>
         </scene>
     </scenes>
     <resources>
         <image name="launchScreen" width="1920" height="1920"/>
         <namedColor name="AccentColor">
-            <color red="0.59215686270000001" green="0.45098039220000002" blue="0.64705882349999999" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="0.59200000762939453" green="0.45100000500679016" blue="0.6470000147819519" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
     </resources>
 </document>
