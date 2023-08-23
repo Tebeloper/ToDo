@@ -30,7 +30,7 @@ class ItemsViewController: UIViewController {
     
     let doneTableTitle: UILabel = {
         let doneTableTitle = UILabel()
-        doneTableTitle.text = "Done items ✅"
+        doneTableTitle.text = "Done ✓"
         doneTableTitle.font = UIFont.preferredFont(forTextStyle: .largeTitle)
         doneTableTitle.isHidden = true
         return doneTableTitle
@@ -126,7 +126,7 @@ class ItemsViewController: UIViewController {
         // Add constraints to doneTableTitle
         doneTableTitle.translatesAutoresizingMaskIntoConstraints = false
         doneTableTitle.topAnchor.constraint(equalTo: doneTableView.topAnchor, constant: -40).isActive = true
-        doneTableTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        doneTableTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20).isActive = true
         doneTableTitle.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         
     }
